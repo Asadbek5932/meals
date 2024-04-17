@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:meals/data/dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals/models/meal.dart';
+import 'package:meals/providers/favorites_provider.dart';
+import 'package:meals/providers/meals_provider.dart';
 import 'package:meals/screens/categories.dart';
 import 'package:meals/screens/filters.dart';
 import 'package:meals/screens/meals.dart';
@@ -13,48 +15,28 @@ final Map<Filter, bool> kFilters = {
   Filter.vegetarian: false,
 };
 
-class TabsScreen extends StatefulWidget {
+class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() {
+  ConsumerState<TabsScreen> createState() {
     return _TabsScreenState();
   }
 }
 
-class _TabsScreenState extends State<TabsScreen> {
+class _TabsScreenState extends ConsumerState<TabsScreen> {
   var _currentIndex = 0;
 
-  final List<Meal> favoritesList = [];
   Map<Filter, bool> choosenFilters = kFilters;
 
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _toogleTheFavoritesList(Meal meal) {
-    if (favoritesList.contains(meal)) {
-      setState(() {
-        favoritesList.remove(meal);
-        currentScreen = MealsScreen(
-            meals: favoritesList, onToggleFavorite: _toogleTheFavoritesList);
-        _showMessage(context, 'Successfully removed');
-      });
-    } else {
-      setState(() {
-        favoritesList.add(meal);
-        _showMessage(context, 'Successfully added');
-      });
-    }
-  }
 
   late Widget currentScreen =
-      CategoriesScreen(onToggleFavorite: _toogleTheFavoritesList, filteredMealss: dummyMeals,);
+      CategoriesScreen(filteredMealss: ref.read(mealsProvider),);
 
   void _changeScreens(int index) {
-    List<Meal> meals = dummyMeals.where((meal) {
+    final favoritesList = ref.watch(favoriteMealsProvider);
+    final mealss = ref.watch(mealsProvider);
+    List<Meal> meals = mealss.where((meal) {
       if (choosenFilters[Filter.vegetarian]! && meal.isVegetarian) {
         return false;
       }
@@ -71,11 +53,13 @@ class _TabsScreenState extends State<TabsScreen> {
     }).toList();
     setState(() {
       _currentIndex = index;
-      currentScreen = index == 0
-          ? CategoriesScreen(onToggleFavorite: _toogleTheFavoritesList, filteredMealss: meals)
-          : MealsScreen(
-              meals: favoritesList, onToggleFavorite: _toogleTheFavoritesList);
+
     });
+    if(_currentIndex == 1) {
+      currentScreen = MealsScreen(meals: favoritesList);
+    } else {
+      currentScreen = CategoriesScreen(filteredMealss: meals);
+    }
   }
 
   @override
