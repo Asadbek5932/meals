@@ -7,13 +7,7 @@ import 'package:meals/screens/categories.dart';
 import 'package:meals/screens/filters.dart';
 import 'package:meals/screens/meals.dart';
 import 'package:meals/widgets/main_drawer.dart';
-
-final Map<Filter, bool> kFilters = {
-  Filter.glutenFree: false,
-  Filter.lactoseFree: false,
-  Filter.vegan: false,
-  Filter.vegetarian: false,
-};
+import 'package:meals/providers/filters_provider.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
@@ -27,15 +21,14 @@ class TabsScreen extends ConsumerStatefulWidget {
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   var _currentIndex = 0;
 
-  Map<Filter, bool> choosenFilters = kFilters;
-
-
-  late Widget currentScreen =
-      CategoriesScreen(filteredMealss: ref.read(mealsProvider),);
+  late Widget currentScreen = CategoriesScreen(
+    filteredMealss: ref.read(mealsProvider),
+  );
 
   void _changeScreens(int index) {
     final favoritesList = ref.watch(favoriteMealsProvider);
     final mealss = ref.watch(mealsProvider);
+    var choosenFilters = ref.watch(filtersProvider);
     List<Meal> meals = mealss.where((meal) {
       if (choosenFilters[Filter.vegetarian]! && meal.isVegetarian) {
         return false;
@@ -53,9 +46,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }).toList();
     setState(() {
       _currentIndex = index;
-
     });
-    if(_currentIndex == 1) {
+    if (_currentIndex == 1) {
       currentScreen = MealsScreen(meals: favoritesList);
     } else {
       currentScreen = CategoriesScreen(filteredMealss: meals);
@@ -67,10 +59,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     void switchScreens(String screenName) async {
       Navigator.of(context).pop();
       if (screenName == 'Filters') {
-        final value = await Navigator.push<Map<Filter, bool>>(
-            context, MaterialPageRoute(builder: (ctx) => FiltersScreen(setedFilters: choosenFilters)));
+        await Navigator.push<Map<Filter, bool>>(
+            context, MaterialPageRoute(builder: (ctx) => FiltersScreen()));
         setState(() {
-          choosenFilters = value ?? kFilters;
           _changeScreens(0);
         });
       }
